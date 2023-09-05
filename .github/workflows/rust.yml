@@ -9,12 +9,9 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
-
     - name: Cache
       uses: actions/cache@v3
       with:
@@ -30,3 +27,9 @@ jobs:
       run: cargo build --verbose -r
     - name: Run tests
       run: cargo test --verbose
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: false
+        files: target/release/solar_getter
