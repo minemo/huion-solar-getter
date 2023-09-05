@@ -9,7 +9,10 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
     - name: Cache
@@ -27,9 +30,28 @@ jobs:
       run: cargo build --verbose -r
     - name: Run tests
       run: cargo test --verbose
-    - uses: "marvinpinto/action-automatic-releases@latest"
+    - name: Upload Linux build artifact
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      uses: actions/upload-artifact@v3
       with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "latest"
-        prerelease: false
-        files: target/release/solar_getter
+        name: ${{ runner.os }}-build
+        path: target/release/solar_getter
+    - name: Upload Windows build artifact
+      if: ${{ matrix.os == 'windows-latest' }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ runner.os }}-build
+        path: target/release/solar_getter.exe
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v3
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: false
+          files: ./*
