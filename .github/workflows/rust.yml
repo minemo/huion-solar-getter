@@ -51,6 +51,8 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           path: ~/
+      - name: Debug
+        run: pwd && ls && ls ~/
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
