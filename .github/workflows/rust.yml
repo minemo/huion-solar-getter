@@ -29,4 +29,4 @@ jobs:
     - name: Build
       run: cargo build --verbose -r
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test --verbose # if you don't want to set write permissions use a PAT token
