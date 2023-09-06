@@ -275,7 +275,47 @@ impl DataLogger {
             data: PVSignalDataType::U16(0),
             address: 32066,
             length: 1,
-            name: "grid_voltage".to_string(),
+            name: "grid_ab_voltage".to_string(),
+            unit: "V".to_string(),
+            gain: 10,
+        });
+        self.general_data.push(PVSignal {
+            data: PVSignalDataType::U16(0),
+            address: 32067,
+            length: 1,
+            name: "bc_voltage".to_string(),
+            unit: "V".to_string(),
+            gain: 10,
+        });
+        self.general_data.push(PVSignal {
+            data: PVSignalDataType::U16(0),
+            address: 32068,
+            length: 1,
+            name: "ca_voltage".to_string(),
+            unit: "V".to_string(),
+            gain: 10,
+        });
+        self.general_data.push(PVSignal {
+            data: PVSignalDataType::U16(0),
+            address: 32069,
+            length: 1,
+            name: "a_voltage".to_string(),
+            unit: "V".to_string(),
+            gain: 10,
+        });
+        self.general_data.push(PVSignal {
+            data: PVSignalDataType::U16(0),
+            address: 32070,
+            length: 1,
+            name: "b_voltage".to_string(),
+            unit: "V".to_string(),
+            gain: 10,
+        });
+        self.general_data.push(PVSignal {
+            data: PVSignalDataType::U16(0),
+            address: 32071,
+            length: 1,
+            name: "c_voltage".to_string(),
             unit: "V".to_string(),
             gain: 10,
         });
@@ -283,7 +323,23 @@ impl DataLogger {
             data: PVSignalDataType::I32(0),
             address: 32072,
             length: 2,
-            name: "grid_current".to_string(),
+            name: "grid_a_current".to_string(),
+            unit: "A".to_string(),
+            gain: 1000,
+        });
+        self.general_data.push(PVSignal {
+            data: PVSignalDataType::I32(0),
+            address: 32074,
+            length: 2,
+            name: "b_current".to_string(),
+            unit: "V".to_string(),
+            gain: 1000,
+        });
+        self.general_data.push(PVSignal {
+            data: PVSignalDataType::I32(0),
+            address: 32076,
+            length: 2,
+            name: "c_current".to_string(),
             unit: "V".to_string(),
             gain: 1000,
         });
@@ -351,14 +407,6 @@ impl DataLogger {
             unit: "kWh".to_string(),
             gain: 100,
         });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U32(0),
-            address: 40000,
-            length: 2,
-            name: "time".to_string(),
-            unit: "".to_string(),
-            gain: 1,
-        });
     }
 
     fn _init_storage_data(&mut self) {
@@ -390,7 +438,7 @@ impl DataLogger {
             data: PVSignalDataType::I32(0),
             address: 37113,
             length: 2,
-            name: "active_power".to_string(),
+            name: "meter_active_power".to_string(),
             unit: "W".to_string(),
             gain: 1,
         });
