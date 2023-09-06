@@ -42,7 +42,7 @@ fn main() {
         datalogger.read_data();
         datalogger.send_data("test".to_string());
 
-        thread::sleep(Duration::from_secs(60));
+        thread::sleep(Duration::from_secs(120));
     }
 
 }
