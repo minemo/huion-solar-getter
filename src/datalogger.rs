@@ -116,9 +116,10 @@ impl DataLogger {
         // adding a lookup-table to database if it doesnt already exist
         debug!("Updating/adding lookup table");
         let mut creator = redis::cmd("HSET");
+        creator.arg(format!("{}:lookup",base_key));
         let alldata: Vec<PVSignal> = [self.general_data.as_slice(), self.storage_data.as_slice(), self.pvs.iter().map(|x| [x.current.clone(), x.voltage.clone()]).flatten().collect::<Vec<PVSignal>>().as_slice()].concat();
         for d in alldata.iter() {
-            creator = creator.arg(&[&d.name, &d.unit]).to_owned();
+            creator.arg(&d.name).arg(&d.unit);
         }
         let _: () = creator.query(&mut con).unwrap();
 
