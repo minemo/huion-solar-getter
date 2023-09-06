@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::time::Duration;
 use std::thread;
 
@@ -34,12 +33,6 @@ fn main() {
     }
 
     info!("Device ID: {}", text);
-
-    info!("Getting device list");
-
-    let device_list: Response = ctx.call(Request::Custom(0x2b, Cow::Borrowed(&[0x0e, 03, 0x87]))).unwrap();
-
-    info!("Device list: {:?}", device_list);
 
     let mut datalogger = datalogger::DataLogger::new(ctx, client);
     datalogger.init();

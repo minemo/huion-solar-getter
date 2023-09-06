@@ -12,7 +12,7 @@ enum PVSignalDataType {
     I32(i32),
     STR(String)
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PVSignal {
     data: PVSignalDataType,
     address: u16,
@@ -94,7 +94,7 @@ impl DataLogger {
     pub fn send_data(&mut self, base_key: String) {
         let mut con = self.redis_client.get_connection().unwrap();
         // save data to redis using timeseries
-        // check if timeseries exists (returns Array with time series for each key or empfy array)
+        // check if timeseries exists (returns Array with time series for each key or empty array)
         let hastimeseries: Vec<String> = redis::cmd("TS.QUERYINDEX").arg("type=solar").query(&mut con).unwrap();
         if hastimeseries.len() != (self.general_data.len() + self.storage_data.len() + self.pvs.len() * 2) {
             // create timeseries for keys
@@ -112,6 +112,15 @@ impl DataLogger {
                 let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pv:{}", base_key, self.pvs[i].current.name)).arg("LABELS").arg("type").arg("solar").arg("data").arg("pv_curr").query(&mut con).unwrap();
             }
         }
+
+        // adding a lookup-table to database if it doesnt already exist
+        debug!("Updating/adding lookup table");
+        let mut creator = redis::cmd("HSET");
+        let alldata: Vec<PVSignal> = [self.general_data.as_slice(), self.storage_data.as_slice(), self.pvs.iter().map(|x| [x.current.clone(), x.voltage.clone()]).flatten().collect::<Vec<PVSignal>>().as_slice()].concat();
+        for d in alldata.iter() {
+            creator = creator.arg(&[&d.name, &d.unit]).to_owned();
+        }
+        let _: () = creator.query(&mut con).unwrap();
 
         info!("Saving data to redis");
 
