@@ -20,6 +20,7 @@ pub struct PVSignal {
     name: String,
     unit: String,
     gain: u16,
+    time: i64,
 }
 
 #[derive(Debug)]
@@ -126,21 +127,20 @@ impl DataLogger {
         info!("Saving data to redis");
 
         // save data to redis
-        let ts = chrono::Utc::now().timestamp_millis();
         for i in 0..self.general_data.len() {
             // filter out strings
             match self.general_data[i].data {
                 PVSignalDataType::U16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(ts).arg((v.clone() as f32)/(self.general_data[i].gain as f32)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(self.general_data[i].time).arg((v.clone() as f32)/(self.general_data[i].gain as f32)).query(&mut con).unwrap();
                 },
                 PVSignalDataType::I16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(ts).arg((v.clone() as f32)/(self.general_data[i].gain as f32)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(self.general_data[i].time).arg((v.clone() as f32)/(self.general_data[i].gain as f32)).query(&mut con).unwrap();
                 },
                 PVSignalDataType::U32(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(ts).arg((v.clone() as f32)/(self.general_data[i].gain as f32)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(self.general_data[i].time).arg((v.clone() as f32)/(self.general_data[i].gain as f32)).query(&mut con).unwrap();
                 },
                 PVSignalDataType::I32(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(ts).arg((v.clone() as f32)/(self.general_data[i].gain as f32)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(self.general_data[i].time).arg((v.clone() as f32)/(self.general_data[i].gain as f32)).query(&mut con).unwrap();
                 },
                 _ => {
                     debug!("Skipping string: {}", self.general_data[i].name);
@@ -151,16 +151,16 @@ impl DataLogger {
         for i in 0..self.storage_data.len() {
             match self.storage_data[i].data {
                 PVSignalDataType::U16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(ts).arg((v.clone() as f32)/(self.storage_data[i].gain as f32)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(self.storage_data[i].time).arg((v.clone() as f32)/(self.storage_data[i].gain as f32)).query(&mut con).unwrap();
                 },
                 PVSignalDataType::I16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(ts).arg((v.clone() as f32)/(self.storage_data[i].gain as f32)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(self.storage_data[i].time).arg((v.clone() as f32)/(self.storage_data[i].gain as f32)).query(&mut con).unwrap();
                 },
                 PVSignalDataType::U32(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(ts).arg((v.clone() as f32)/(self.storage_data[i].gain as f32)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(self.storage_data[i].time).arg((v.clone() as f32)/(self.storage_data[i].gain as f32)).query(&mut con).unwrap();
                 },
                 PVSignalDataType::I32(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(ts).arg((v.clone() as f32)/(self.storage_data[i].gain as f32)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(self.storage_data[i].time).arg((v.clone() as f32)/(self.storage_data[i].gain as f32)).query(&mut con).unwrap();
                 },
                 _ => {
                     debug!("Skipping string: {}", self.general_data[i].name);
@@ -171,7 +171,7 @@ impl DataLogger {
         for i in 0..self.pvs.len() {
             match self.pvs[i].voltage.data {
                 PVSignalDataType::I16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pv:{}", base_key, self.pvs[i].voltage.name)).arg(ts).arg((v.clone() as f32)/(self.pvs[i].voltage.gain as f32)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pv:{}", base_key, self.pvs[i].voltage.name)).arg(self.pvs[i].voltage.time).arg((v.clone() as f32)/(self.pvs[i].voltage.gain as f32)).query(&mut con).unwrap();
                 },
                 _ => {
                     debug!("Skipping string: {}", self.pvs[i].voltage.name);
@@ -179,7 +179,7 @@ impl DataLogger {
             }
             match self.pvs[i].current.data {
                 PVSignalDataType::I16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pv:{}", base_key, self.pvs[i].current.name)).arg(ts).arg((v.clone() as f32)/(self.pvs[i].current.gain as f32)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pv:{}", base_key, self.pvs[i].current.name)).arg(self.pvs[i].current.time).arg((v.clone() as f32)/(self.pvs[i].current.gain as f32)).query(&mut con).unwrap();
                 },
                 _ => {
                     debug!("Skipping string: {}", self.pvs[i].current.name);
@@ -215,6 +215,7 @@ impl DataLogger {
                     name: format!("pv_{}_voltage", i),
                     unit: "V".to_string(),
                     gain: 10,
+                    time: 0,
                 },
                 current: PVSignal {
                     data: PVSignalDataType::I16(0),
@@ -223,6 +224,7 @@ impl DataLogger {
                     name: format!("pv_{}_current", i),
                     unit: "A".to_string(),
                     gain: 100,
+                    time: 0,
                 }
             };
             self.pvs.push(pv);
@@ -238,6 +240,7 @@ impl DataLogger {
             name: "model_ident".to_string(),
             unit: "".to_string(),
             gain: 1,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U32(0),
@@ -246,6 +249,7 @@ impl DataLogger {
             name: "rated_power".to_string(),
             unit: "kW".to_string(),
             gain: 1000,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U32(0),
@@ -254,6 +258,7 @@ impl DataLogger {
             name: "maximum_active_power".to_string(),
             unit: "kW".to_string(),
             gain: 1000,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U32(0),
@@ -262,6 +267,7 @@ impl DataLogger {
             name: "maximum_apparent_power".to_string(),
             unit: "kVA".to_string(),
             gain: 1000,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::I32(0),
@@ -270,6 +276,7 @@ impl DataLogger {
             name: "input_power".to_string(),
             unit: "kW".to_string(),
             gain: 1000,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U16(0),
@@ -278,6 +285,7 @@ impl DataLogger {
             name: "grid_ab_voltage".to_string(),
             unit: "V".to_string(),
             gain: 10,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U16(0),
@@ -286,6 +294,7 @@ impl DataLogger {
             name: "bc_voltage".to_string(),
             unit: "V".to_string(),
             gain: 10,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U16(0),
@@ -294,6 +303,7 @@ impl DataLogger {
             name: "ca_voltage".to_string(),
             unit: "V".to_string(),
             gain: 10,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U16(0),
@@ -302,6 +312,7 @@ impl DataLogger {
             name: "a_voltage".to_string(),
             unit: "V".to_string(),
             gain: 10,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U16(0),
@@ -310,6 +321,7 @@ impl DataLogger {
             name: "b_voltage".to_string(),
             unit: "V".to_string(),
             gain: 10,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U16(0),
@@ -318,6 +330,7 @@ impl DataLogger {
             name: "c_voltage".to_string(),
             unit: "V".to_string(),
             gain: 10,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::I32(0),
@@ -326,6 +339,7 @@ impl DataLogger {
             name: "grid_a_current".to_string(),
             unit: "A".to_string(),
             gain: 1000,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::I32(0),
@@ -334,6 +348,7 @@ impl DataLogger {
             name: "b_current".to_string(),
             unit: "V".to_string(),
             gain: 1000,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::I32(0),
@@ -342,6 +357,7 @@ impl DataLogger {
             name: "c_current".to_string(),
             unit: "V".to_string(),
             gain: 1000,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::I32(0),
@@ -350,6 +366,7 @@ impl DataLogger {
             name: "peak_active_day".to_string(),
             unit: "kW".to_string(),
             gain: 1000,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::I32(0),
@@ -358,6 +375,7 @@ impl DataLogger {
             name: "active_power".to_string(),
             unit: "kW".to_string(),
             gain: 1000,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::I32(0),
@@ -366,6 +384,7 @@ impl DataLogger {
             name: "reactive_power".to_string(),
             unit: "kVar".to_string(),
             gain: 1000,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U16(0),
@@ -374,6 +393,7 @@ impl DataLogger {
             name: "grid_frequency".to_string(),
             unit: "Hz".to_string(),
             gain: 100,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U16(0),
@@ -382,6 +402,7 @@ impl DataLogger {
             name: "efficiency".to_string(),
             unit: "kW".to_string(),
             gain: 100,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::I16(0),
@@ -390,6 +411,7 @@ impl DataLogger {
             name: "temp".to_string(),
             unit: "C".to_string(),
             gain: 10,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U32(0),
@@ -398,6 +420,7 @@ impl DataLogger {
             name: "acc_energy_yield".to_string(),
             unit: "kWh".to_string(),
             gain: 100,
+            time: 0,
         });
         self.general_data.push(PVSignal {
             data: PVSignalDataType::U32(0),
@@ -406,6 +429,7 @@ impl DataLogger {
             name: "daily_energy_yield".to_string(),
             unit: "kWh".to_string(),
             gain: 100,
+            time: 0,
         });
     }
 
@@ -417,6 +441,7 @@ impl DataLogger {
             name: "charge_discharge_power".to_string(),
             unit: "W".to_string(),
             gain: 1,
+            time: 0,
         });
         self.storage_data.push(PVSignal {
             data: PVSignalDataType::U32(0),
@@ -425,6 +450,7 @@ impl DataLogger {
             name: "day_charge_capacity".to_string(),
             unit: "kWh".to_string(),
             gain: 100,
+            time: 0,
         });
         self.storage_data.push(PVSignal {
             data: PVSignalDataType::U32(0),
@@ -433,6 +459,7 @@ impl DataLogger {
             name: "day_discharge_capacity".to_string(),
             unit: "kWh".to_string(),
             gain: 100,
+            time: 0,
         });
         self.storage_data.push(PVSignal {
             data: PVSignalDataType::I32(0),
@@ -441,6 +468,7 @@ impl DataLogger {
             name: "meter_active_power".to_string(),
             unit: "W".to_string(),
             gain: 1,
+            time: 0,
         });
     }
 
@@ -464,6 +492,7 @@ impl DataLogger {
         for i in 0..self.general_data.len() {
             debug!("Reading data for: {}", self.general_data[i].name);
             let mut tmp: Vec<u16> = self.ctx.read_holding_registers(self.general_data[i].address, self.general_data[i].length).unwrap();
+            self.general_data[i].time = chrono::Utc::now().timestamp();
             data.append(&mut tmp);
         }
         for i in 0..self.general_data.len() {
@@ -497,6 +526,7 @@ impl DataLogger {
         for i in 0..self.storage_data.len() {
             debug!("Reading data for: {}", self.storage_data[i].name);
             let mut tmp: Vec<u16> = self.ctx.read_holding_registers(self.storage_data[i].address, self.storage_data[i].length).unwrap();
+            self.storage_data[i].time = chrono::Utc::now().timestamp();
             data.append(&mut tmp);
         }
         for i in 0..self.storage_data.len() {
@@ -530,9 +560,11 @@ impl DataLogger {
         for i in 0..self.pvs.len() {
             debug!("Reading data for: {}", self.pvs[i].voltage.name);
             let mut tmp: Vec<u16> = self.ctx.read_holding_registers(self.pvs[i].voltage.address, self.pvs[i].voltage.length).unwrap();
+            self.pvs[i].voltage.time = chrono::Utc::now().timestamp();
             data.append(&mut tmp);
             debug!("Reading data for: {}", self.pvs[i].current.name);
             let mut tmp: Vec<u16> = self.ctx.read_holding_registers(self.pvs[i].current.address, self.pvs[i].current.length).unwrap();
+            self.pvs[i].current.time = chrono::Utc::now().timestamp();
             data.append(&mut tmp);
         }
         for i in 0..self.pvs.len() {
