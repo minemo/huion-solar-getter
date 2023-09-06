@@ -492,7 +492,7 @@ impl DataLogger {
         for i in 0..self.general_data.len() {
             debug!("Reading data for: {}", self.general_data[i].name);
             let mut tmp: Vec<u16> = self.ctx.read_holding_registers(self.general_data[i].address, self.general_data[i].length).unwrap();
-            self.general_data[i].time = chrono::Utc::now().timestamp();
+            self.general_data[i].time = chrono::Utc::now().timestamp_millis();
             data.append(&mut tmp);
         }
         for i in 0..self.general_data.len() {
@@ -526,7 +526,7 @@ impl DataLogger {
         for i in 0..self.storage_data.len() {
             debug!("Reading data for: {}", self.storage_data[i].name);
             let mut tmp: Vec<u16> = self.ctx.read_holding_registers(self.storage_data[i].address, self.storage_data[i].length).unwrap();
-            self.storage_data[i].time = chrono::Utc::now().timestamp();
+            self.storage_data[i].time = chrono::Utc::now().timestamp_millis();
             data.append(&mut tmp);
         }
         for i in 0..self.storage_data.len() {
@@ -560,11 +560,11 @@ impl DataLogger {
         for i in 0..self.pvs.len() {
             debug!("Reading data for: {}", self.pvs[i].voltage.name);
             let mut tmp: Vec<u16> = self.ctx.read_holding_registers(self.pvs[i].voltage.address, self.pvs[i].voltage.length).unwrap();
-            self.pvs[i].voltage.time = chrono::Utc::now().timestamp();
+            self.pvs[i].voltage.time = chrono::Utc::now().timestamp_millis();
             data.append(&mut tmp);
             debug!("Reading data for: {}", self.pvs[i].current.name);
             let mut tmp: Vec<u16> = self.ctx.read_holding_registers(self.pvs[i].current.address, self.pvs[i].current.length).unwrap();
-            self.pvs[i].current.time = chrono::Utc::now().timestamp();
+            self.pvs[i].current.time = chrono::Utc::now().timestamp_millis();
             data.append(&mut tmp);
         }
         for i in 0..self.pvs.len() {
