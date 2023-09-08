@@ -63,7 +63,7 @@ fn main() {
     loop {
         info!("Starting new gathering cycle");
         datalogger.read_data();
-        datalogger.send_data("test".to_string());
+        datalogger.send_data("test_alt".to_string());
 
         thread::sleep(Duration::from_secs(120));
     }

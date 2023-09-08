@@ -82,16 +82,16 @@ impl DataLogger {
             // create timeseries for keys
             debug!("Creating timeseries for keys");
             for i in 0..self.general_data.len() {
-                let _: () = redis::cmd("TS.CREATE").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg("LABELS").arg("type").arg("solar").arg("data").arg("general").query(&mut con).unwrap();
+                let _: () = redis::cmd("TS.CREATE").arg(format!("{}:general:{}", base_key.to_owned(), self.general_data[i].name)).arg("LABELS").arg("key").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("general").query(&mut con).unwrap();
             }
 
             for i in 0..self.storage_data.len() {
-                let _: () = redis::cmd("TS.CREATE").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg("LABELS").arg("type").arg("solar").arg("data").arg("storage").query(&mut con).unwrap();
+                let _: () = redis::cmd("TS.CREATE").arg(format!("{}:storage:{}", base_key.to_owned(), self.storage_data[i].name)).arg("LABELS").arg("key").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("storage").query(&mut con).unwrap();
             }
 
             for i in 0..self.pvs.len() {
-                let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pv:{}", base_key, self.pvs[i].voltage.name)).arg("LABELS").arg("type").arg("solar").arg("data").arg("pv_volt").query(&mut con).unwrap();
-                let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pv:{}", base_key, self.pvs[i].current.name)).arg("LABELS").arg("type").arg("solar").arg("data").arg("pv_curr").query(&mut con).unwrap();
+                let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pv:{}", base_key.to_owned(), self.pvs[i].voltage.name)).arg("LABELS").arg("key").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("pv_volt").query(&mut con).unwrap();
+                let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pv:{}", base_key.to_owned(), self.pvs[i].current.name)).arg("LABELS").arg("key").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("pv_curr").query(&mut con).unwrap();
             }
         }
 
