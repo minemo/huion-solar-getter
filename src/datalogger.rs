@@ -61,7 +61,7 @@ impl DataLogger {
         let num_pvs = self._get_num_pvs() as u8;
         self.pvs = gen_pvdata(num_pvs);
         self.general_data = gen_constdata(0);
-        self.pgs_data = gen_constdata(1);
+        // self.pgs_data = gen_constdata(1);
         self.storage_data = gen_storagedata();
         self._test_redis();
     }
@@ -79,7 +79,7 @@ impl DataLogger {
         // check if timeseries exists (returns Array with time series for each key or empty array)
         let hastimeseries: Vec<String> = redis::cmd("TS.QUERYINDEX").arg(format!("base={}",base_key)).query(&mut con).unwrap();
         debug!("{} + {} + {} + {} Values",self.general_data.len(), self.pgs_data.len(), self.storage_data.len(), self.pvs.len() * 2);
-        if hastimeseries.len() != (self.general_data.len() + self.pgs_data.len() + self.storage_data.len() + self.pvs.len() * 2) {
+        if hastimeseries.len() != (self.general_data.len() + self.storage_data.len() + self.pvs.len() * 2) {
             // create timeseries for keys
             debug!("Creating timeseries for keys");
             for i in 0..self.general_data.len() {
@@ -90,9 +90,9 @@ impl DataLogger {
                 let _: () = redis::cmd("TS.CREATE").arg(format!("{}:storage:{}", base_key.to_owned(), self.storage_data[i].name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("storage").query(&mut con).unwrap();
             }
 
-            for i in 0..self.pgs_data.len() {
-                let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pgs:{}", base_key.to_owned(), self.pgs_data[i].name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("storage").query(&mut con).unwrap();
-            }
+            // for i in 0..self.pgs_data.len() {
+            //     let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pgs:{}", base_key.to_owned(), self.pgs_data[i].name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("storage").query(&mut con).unwrap();
+            // }
 
             for i in 0..self.pvs.len() {
                 let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pv:{}", base_key.to_owned(), self.pvs[i].voltage.name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("pv_volt").query(&mut con).unwrap();
@@ -160,28 +160,28 @@ impl DataLogger {
             }
         }
 
-        for i in 0..self.pgs_data.len() {
-            match self.pgs_data[i].data {
-                PVSignalDataType::U16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::I16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::U32(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::I32(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::STR(_) => {
-                    debug!("Skipping string: {}", self.pgs_data[i].name);
-                },
-                PVSignalDataType::UNK(_) => {
-                    warn!("Got an unknown: {}", self.pgs_data[i].name);
-                },
-            }
-        }
+        // for i in 0..self.pgs_data.len() {
+        //     match self.pgs_data[i].data {
+        //         PVSignalDataType::U16(v) => {
+        //             let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
+        //         },
+        //         PVSignalDataType::I16(v) => {
+        //             let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
+        //         },
+        //         PVSignalDataType::U32(v) => {
+        //             let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
+        //         },
+        //         PVSignalDataType::I32(v) => {
+        //             let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
+        //         },
+        //         PVSignalDataType::STR(_) => {
+        //             debug!("Skipping string: {}", self.pgs_data[i].name);
+        //         },
+        //         PVSignalDataType::UNK(_) => {
+        //             warn!("Got an unknown: {}", self.pgs_data[i].name);
+        //         },
+        //     }
+        // }
 
         for i in 0..self.pvs.len() {
             match self.pvs[i].voltage.data {
