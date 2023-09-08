@@ -89,6 +89,10 @@ impl DataLogger {
                 let _: () = redis::cmd("TS.CREATE").arg(format!("{}:storage:{}", base_key.to_owned(), self.storage_data[i].name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("storage").query(&mut con).unwrap();
             }
 
+            for i in 0..self.pgs_data.len() {
+                let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pgs:{}", base_key.to_owned(), self.pgs_data[i].name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("storage").query(&mut con).unwrap();
+            }
+
             for i in 0..self.pvs.len() {
                 let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pv:{}", base_key.to_owned(), self.pvs[i].voltage.name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("pv_volt").query(&mut con).unwrap();
                 let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pv:{}", base_key.to_owned(), self.pvs[i].current.name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("pv_curr").query(&mut con).unwrap();
@@ -151,6 +155,29 @@ impl DataLogger {
                 },
                 PVSignalDataType::UNK(_) => {
                     warn!("Got an unknown: {}", self.storage_data[i].name);
+                },
+            }
+        }
+
+        for i in 0..self.storage_data.len() {
+            match self.pgs_data[i].data {
+                PVSignalDataType::U16(v) => {
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
+                },
+                PVSignalDataType::I16(v) => {
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
+                },
+                PVSignalDataType::U32(v) => {
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
+                },
+                PVSignalDataType::I32(v) => {
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
+                },
+                PVSignalDataType::STR(_) => {
+                    debug!("Skipping string: {}", self.pgs_data[i].name);
+                },
+                PVSignalDataType::UNK(_) => {
+                    warn!("Got an unknown: {}", self.pgs_data[i].name);
                 },
             }
         }
