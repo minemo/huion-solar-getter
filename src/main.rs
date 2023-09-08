@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::time::{Duration,Instant};
 use std::thread;
 use std::env;
 
@@ -62,8 +62,14 @@ fn main() {
 
     loop {
         info!("Starting new gathering cycle");
+        let readstart = Instant::now();
         datalogger.read_data();
+        let readdur = readstart.elapsed();
+        info!("Reading Registers took: {}s", readdur.as_secs());
+        let writestart = Instant::now();
         datalogger.send_data("test_alt".to_string());
+        let writedur = writestart.elapsed();
+        info!("Writing to Database took: {}s", writedur.as_secs());
 
         thread::sleep(Duration::from_secs(120));
     }
