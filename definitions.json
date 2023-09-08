@@ -74,7 +74,7 @@
         {"dtype": "U16", "addr": 37025, "len": 1, "gain": 1, "name":"remaining_charge_discharge_time", "unit":"min", "category": 2},
         {"dtype": "U32", "addr": 37046, "len": 2, "gain": 1, "name":"max_charge_power", "unit":"W", "category": 2},
         {"dtype": "U32", "addr": 37048, "len": 2, "gain": 1, "name":"max_discharge_power", "unit":"W", "category": 2},
-        {"dtype": "U32", "addr": 37048, "len": 2, "gain": 1, "name":"max_discharge_power", "unit":"W", "category": 2},
+        {"dtype": "STR", "addr": 37052, "len": 10, "gain": 1, "name":"sn", "unit":"", "category": 2},
         {"dtype": "U32", "addr": 37066, "len": 2, "gain": 100, "name":"total_charge", "unit":"kWh", "category": 2},
         {"dtype": "U32", "addr": 37068, "len": 2, "gain": 100, "name":"total_discharge", "unit":"kWh", "category": 2}
     ],
