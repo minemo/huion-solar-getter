@@ -1,33 +1,9 @@
 use redis::ToRedisArgs;
 use tokio_modbus::{client::sync, prelude::SyncReader};
 use rand::prelude::*;
+use crate::parser::{types::*, gen_constdata, gen_pvdata, gen_storagedata};
 
 extern crate redis;
-
-#[derive(Debug, Clone)]
-enum PVSignalDataType {
-    U16(u16),
-    I16(i16),
-    U32(u32),
-    I32(i32),
-    STR(String)
-}
-#[derive(Debug, Clone)]
-pub struct PVSignal {
-    data: PVSignalDataType,
-    address: u16,
-    length: u16,
-    name: String,
-    unit: String,
-    gain: u16,
-    time: i64,
-}
-
-#[derive(Debug)]
-pub struct PVString {
-    voltage: PVSignal,
-    current: PVSignal,
-}
 
 #[derive(Debug)]
 pub struct DataLogger {
@@ -35,6 +11,7 @@ pub struct DataLogger {
     redis_client: redis::Client,
     pvs: Vec<PVString>,
     general_data: Vec<PVSignal>,
+    pgs_data: Vec<PVSignal>,
     storage_data: Vec<PVSignal>,
 }
 
@@ -49,6 +26,7 @@ impl ToRedisArgs for PVSignalDataType {
             PVSignalDataType::U32(x) => x.write_redis_args(out),
             PVSignalDataType::I32(x) => x.write_redis_args(out),
             PVSignalDataType::STR(x) => x.write_redis_args(out),
+            PVSignalDataType::UNK(x) => x.write_redis_args(out),
         }
     }
 
@@ -74,14 +52,17 @@ impl DataLogger {
             redis_client: redis,
             pvs: Vec::new(),
             general_data: Vec::new(),
+            pgs_data: Vec::new(),
             storage_data: Vec::new(),
         }
     }
 
     pub fn init(&mut self) {
-        self._init_pvs();
-        self._init_general_data();
-        self._init_storage_data();
+        let num_pvs = self._get_num_pvs() as u8;
+        self.pvs = gen_pvdata(num_pvs);
+        self.general_data = gen_constdata(0);
+        self.pgs_data = gen_constdata(1);
+        self.storage_data = gen_storagedata();
         self._test_redis();
     }
 
@@ -192,284 +173,16 @@ impl DataLogger {
         let _: () = redis::cmd("QUIT").query(&mut con).unwrap();
     }
 
-    pub fn get_pvs(&self) -> &Vec<PVString> {
+    pub fn _get_pvs(&self) -> &Vec<PVString> {
         &self.pvs
     }
 
-    pub fn get_general_data(&self) -> &Vec<PVSignal> {
+    pub fn _get_general_data(&self) -> &Vec<PVSignal> {
         &self.general_data
     }
 
-    pub fn get_storage_data(&self) -> &Vec<PVSignal> {
+    pub fn _get_storage_data(&self) -> &Vec<PVSignal> {
         &self.storage_data
-    }
-
-    fn _init_pvs(&mut self) {
-        let num_pvs = self._get_num_pvs();
-        for i in 0..num_pvs {
-            let pv = PVString {
-                voltage: PVSignal {
-                    data: PVSignalDataType::I16(0),
-                    address: 32016 + i * 2,
-                    length: 1,
-                    name: format!("pv_{}_voltage", i),
-                    unit: "V".to_string(),
-                    gain: 10,
-                    time: 0,
-                },
-                current: PVSignal {
-                    data: PVSignalDataType::I16(0),
-                    address: 32017 + i * 2,
-                    length: 1,
-                    name: format!("pv_{}_current", i),
-                    unit: "A".to_string(),
-                    gain: 100,
-                    time: 0,
-                }
-            };
-            self.pvs.push(pv);
-        }
-    }
-
-    fn _init_general_data(&mut self) {
-        //? Add entries manually here, because they are too different to be generated
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::STR("".to_string()),
-            address: 30000,
-            length: 15,
-            name: "model_ident".to_string(),
-            unit: "".to_string(),
-            gain: 1,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U32(0),
-            address: 30073,
-            length: 2,
-            name: "rated_power".to_string(),
-            unit: "kW".to_string(),
-            gain: 1000,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U32(0),
-            address: 30075,
-            length: 2,
-            name: "maximum_active_power".to_string(),
-            unit: "kW".to_string(),
-            gain: 1000,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U32(0),
-            address: 30077,
-            length: 2,
-            name: "maximum_apparent_power".to_string(),
-            unit: "kVA".to_string(),
-            gain: 1000,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::I32(0),
-            address: 32064,
-            length: 2,
-            name: "input_power".to_string(),
-            unit: "kW".to_string(),
-            gain: 1000,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U16(0),
-            address: 32066,
-            length: 1,
-            name: "grid_ab_voltage".to_string(),
-            unit: "V".to_string(),
-            gain: 10,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U16(0),
-            address: 32067,
-            length: 1,
-            name: "bc_voltage".to_string(),
-            unit: "V".to_string(),
-            gain: 10,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U16(0),
-            address: 32068,
-            length: 1,
-            name: "ca_voltage".to_string(),
-            unit: "V".to_string(),
-            gain: 10,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U16(0),
-            address: 32069,
-            length: 1,
-            name: "a_voltage".to_string(),
-            unit: "V".to_string(),
-            gain: 10,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U16(0),
-            address: 32070,
-            length: 1,
-            name: "b_voltage".to_string(),
-            unit: "V".to_string(),
-            gain: 10,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U16(0),
-            address: 32071,
-            length: 1,
-            name: "c_voltage".to_string(),
-            unit: "V".to_string(),
-            gain: 10,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::I32(0),
-            address: 32072,
-            length: 2,
-            name: "grid_a_current".to_string(),
-            unit: "A".to_string(),
-            gain: 1000,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::I32(0),
-            address: 32074,
-            length: 2,
-            name: "b_current".to_string(),
-            unit: "V".to_string(),
-            gain: 1000,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::I32(0),
-            address: 32076,
-            length: 2,
-            name: "c_current".to_string(),
-            unit: "V".to_string(),
-            gain: 1000,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::I32(0),
-            address: 32078,
-            length: 2,
-            name: "peak_active_day".to_string(),
-            unit: "kW".to_string(),
-            gain: 1000,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::I32(0),
-            address: 32080,
-            length: 2,
-            name: "active_power".to_string(),
-            unit: "kW".to_string(),
-            gain: 1000,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::I32(0),
-            address: 32082,
-            length: 2,
-            name: "reactive_power".to_string(),
-            unit: "kVar".to_string(),
-            gain: 1000,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U16(0),
-            address: 32085,
-            length: 1,
-            name: "grid_frequency".to_string(),
-            unit: "Hz".to_string(),
-            gain: 100,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U16(0),
-            address: 32086,
-            length: 1,
-            name: "efficiency".to_string(),
-            unit: "kW".to_string(),
-            gain: 100,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::I16(0),
-            address: 32087,
-            length: 1,
-            name: "temp".to_string(),
-            unit: "C".to_string(),
-            gain: 10,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U32(0),
-            address: 32106,
-            length: 2,
-            name: "acc_energy_yield".to_string(),
-            unit: "kWh".to_string(),
-            gain: 100,
-            time: 0,
-        });
-        self.general_data.push(PVSignal {
-            data: PVSignalDataType::U32(0),
-            address: 32114,
-            length: 2,
-            name: "daily_energy_yield".to_string(),
-            unit: "kWh".to_string(),
-            gain: 100,
-            time: 0,
-        });
-    }
-
-    fn _init_storage_data(&mut self) {
-        self.storage_data.push(PVSignal {
-            data: PVSignalDataType::I32(0),
-            address: 37001,
-            length: 2,
-            name: "charge_discharge_power".to_string(),
-            unit: "W".to_string(),
-            gain: 1,
-            time: 0,
-        });
-        self.storage_data.push(PVSignal {
-            data: PVSignalDataType::U32(0),
-            address: 37015,
-            length: 2,
-            name: "day_charge_capacity".to_string(),
-            unit: "kWh".to_string(),
-            gain: 100,
-            time: 0,
-        });
-        self.storage_data.push(PVSignal {
-            data: PVSignalDataType::U32(0),
-            address: 37017,
-            length: 2,
-            name: "day_discharge_capacity".to_string(),
-            unit: "kWh".to_string(),
-            gain: 100,
-            time: 0,
-        });
-        self.storage_data.push(PVSignal {
-            data: PVSignalDataType::I32(0),
-            address: 37113,
-            length: 2,
-            name: "meter_active_power".to_string(),
-            unit: "W".to_string(),
-            gain: 1,
-            time: 0,
-        });
     }
 
     fn _test_redis(&mut self) {
@@ -517,6 +230,7 @@ impl DataLogger {
                     }
                     self.general_data[i].data = PVSignalDataType::STR(text);
                 },
+                PVSignalDataType::UNK(_) => self.general_data[i].data = PVSignalDataType::U16(data[i]),
             }
         }
     }
@@ -551,6 +265,7 @@ impl DataLogger {
                     }
                     self.storage_data[i].data = PVSignalDataType::STR(text);
                 },
+                PVSignalDataType::UNK(_) => self.storage_data[i].data = PVSignalDataType::U16(data[i]),
             }
         }
     }
@@ -589,6 +304,6 @@ impl DataLogger {
 
     fn _get_num_pvs(&mut self) -> u16 {
         let pvs: Vec<u16> = self.ctx.read_holding_registers(30071, 1).unwrap();
-        pvs[0]
+        return pvs[0];
     }
 }

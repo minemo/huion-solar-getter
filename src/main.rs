@@ -1,5 +1,6 @@
 use std::time::Duration;
 use std::thread;
+use std::env;
 
 use tokio_modbus::prelude::*;
 
@@ -7,14 +8,36 @@ use tokio_modbus::prelude::*;
 extern crate log;
 
 mod datalogger;
+mod parser;
+
+struct ConnectionData {
+    inverter_ip: String,
+    redis_ip: String,
+}
 
 fn main() {
     env_logger::init();
 
     info!("Connecting to slave");
 
-    let mut ctx = sync::tcp::connect_slave_with_timeout("192.168.178.83:502".parse().unwrap(), Slave(1), Some(Duration::from_secs(5))).unwrap();
-    let client = redis::Client::open("redis://192.168.178.109/").unwrap();
+    let mut condata = ConnectionData{
+        inverter_ip:"192.168.178.83:502".to_string(),
+        redis_ip:"redis://192.168.178.109/".to_string()
+    };
+
+    match env::var("INV_IP") {
+        Ok(v) => condata.inverter_ip = v,
+        Err(_) => warn!("Environment variables not configured, using default"),
+    };
+
+    match env::var("RD_IP") {
+        Ok(v) => condata.redis_ip = v,
+        Err(_) => warn!("Environment variables not configured, using default"),
+    }
+
+    
+    let mut ctx = sync::tcp::connect_slave_with_timeout(condata.inverter_ip.parse().unwrap(), Slave(1), Some(Duration::from_secs(5))).unwrap();
+    let client = redis::Client::open(condata.redis_ip).unwrap();
     
     debug!("sleeping 1 second to make sure the slave is ready");
 
