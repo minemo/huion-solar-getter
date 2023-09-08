@@ -78,6 +78,7 @@ impl DataLogger {
         // save data to redis using timeseries
         // check if timeseries exists (returns Array with time series for each key or empty array)
         let hastimeseries: Vec<String> = redis::cmd("TS.QUERYINDEX").arg(format!("base={}",base_key)).query(&mut con).unwrap();
+        debug!("{} + {} + {} + {} Values",self.general_data.len(), self.pgs_data.len(), self.storage_data.len(), self.pvs.len() * 2);
         if hastimeseries.len() != (self.general_data.len() + self.pgs_data.len() + self.storage_data.len() + self.pvs.len() * 2) {
             // create timeseries for keys
             debug!("Creating timeseries for keys");
