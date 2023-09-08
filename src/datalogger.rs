@@ -160,7 +160,7 @@ impl DataLogger {
             }
         }
 
-        for i in 0..self.storage_data.len() {
+        for i in 0..self.pgs_data.len() {
             match self.pgs_data[i].data {
                 PVSignalDataType::U16(v) => {
                     let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f32)/(self.pgs_data[i].gain as f32)).query(&mut con).unwrap();
