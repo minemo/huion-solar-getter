@@ -71,7 +71,7 @@ fn main() {
         let writedur = writestart.elapsed();
         info!("Writing to Database took: {}s", writedur.as_secs());
 
-        thread::sleep(Duration::from_secs(120-(readdur.as_secs()+writedur.as_secs())));
+        thread::sleep(Duration::from_secs(90));
     }
 
 }
