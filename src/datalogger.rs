@@ -68,7 +68,7 @@ fn sort_data_redis(i: usize, base_key: &String, cat_key: String, base_data: &Vec
     }
 }
 
-fn sort_data_store(base_data: &Vec<PVSignal>, data: Vec<u16>) {
+fn sort_data_store(base_data: &mut Vec<PVSignal>, data: Vec<u16>) {
     for i in 0..base_data.len() {
         match base_data[i].data {
             PVSignalDataType::U16(_) => {
@@ -236,7 +236,7 @@ impl DataLogger {
             self.general_data[i].time = chrono::Utc::now().timestamp_millis();
             data.append(&mut tmp);
         }
-        sort_data_store(&self.general_data,data);
+        sort_data_store(&mut self.general_data,data);
     }
 
     fn _read_storage_data(&mut self) {
@@ -247,7 +247,7 @@ impl DataLogger {
             self.storage_data[i].time = chrono::Utc::now().timestamp_millis();
             data.append(&mut tmp);
         }
-        sort_data_store(&self.storage_data,data);
+        sort_data_store(&mut self.storage_data,data);
     }
 
     fn _read_pv_data(&mut self) {
