@@ -45,6 +45,57 @@ impl ToRedisArgs for PVSignalDataType {
     }
 }
 
+fn sort_data_redis(i: usize, base_key: &String, cat_key: String, base_data: &Vec<PVSignal>, con: &mut redis::Connection) {
+    match base_data[i].data {
+        PVSignalDataType::U16(v) => {
+            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg((v.clone() as f64)/(base_data[i].gain as f64)).query(con).unwrap();
+        },
+        PVSignalDataType::I16(v) => {
+            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg((v.clone() as f64)/(base_data[i].gain as f64)).query(con).unwrap();
+        },
+        PVSignalDataType::U32(v) => {
+            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg((v.clone() as f64)/(base_data[i].gain as f64)).query(con).unwrap();
+        },
+        PVSignalDataType::I32(v) => {
+            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg((v.clone() as f64)/(base_data[i].gain as f64)).query(con).unwrap();
+        },
+        PVSignalDataType::STR(_) => {
+            debug!("Skipping string: {}", base_data[i].name);
+        },
+        PVSignalDataType::UNK(_) => {
+            warn!("Got an unknown: {}", base_data[i].name);
+        }
+    }
+}
+
+fn sort_data_store(base_data: &Vec<PVSignal>, data: Vec<u16>) {
+    for i in 0..base_data.len() {
+        match base_data[i].data {
+            PVSignalDataType::U16(_) => {
+                base_data[i].data = PVSignalDataType::U16(data[i]);
+            },
+            PVSignalDataType::I16(_) => {
+                base_data[i].data = PVSignalDataType::I16(data[i] as i16);
+            },
+            PVSignalDataType::U32(_) => {
+                base_data[i].data = PVSignalDataType::U32((data[i] as u32) << 16 | data[i+1] as u32);
+            },
+            PVSignalDataType::I32(_) => {
+                base_data[i].data = PVSignalDataType::I32(((data[i] as u32) << 16 | data[i+1] as u32) as i32);
+            },
+            PVSignalDataType::STR(_) => {
+                let mut text = String::new();
+                for j in 0..base_data[i].length {
+                    text.push((data[i+j as usize] >> 8) as u8 as char);
+                    text.push((data[i+j as usize] & 0xFF) as u8 as char);
+                }
+                base_data[i].data = PVSignalDataType::STR(text);
+            },
+            PVSignalDataType::UNK(_) => base_data[i].data = PVSignalDataType::UNK(data[i]),
+        }
+    }
+}
+
 impl DataLogger {
     pub fn new(ctx: sync::Context, redis: redis::Client) -> DataLogger {
         DataLogger {
@@ -90,9 +141,9 @@ impl DataLogger {
                 let _: () = redis::cmd("TS.CREATE").arg(format!("{}:storage:{}", base_key.to_owned(), self.storage_data[i].name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("storage").query(&mut con).unwrap();
             }
 
-            // for i in 0..self.pgs_data.len() {
-            //     let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pgs:{}", base_key.to_owned(), self.pgs_data[i].name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("storage").query(&mut con).unwrap();
-            // }
+            for i in 0..self.pgs_data.len() {
+                let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pgs:{}", base_key.to_owned(), self.pgs_data[i].name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("storage").query(&mut con).unwrap();
+            }
 
             for i in 0..self.pvs.len() {
                 let _: () = redis::cmd("TS.CREATE").arg(format!("{}:pv:{}", base_key.to_owned(), self.pvs[i].voltage.name)).arg("LABELS").arg("base").arg(base_key.to_owned()).arg("type").arg("solar").arg("data").arg("pv_volt").query(&mut con).unwrap();
@@ -114,74 +165,16 @@ impl DataLogger {
 
         // save data to redis
         for i in 0..self.general_data.len() {
-            // filter out strings
-            match self.general_data[i].data {
-                PVSignalDataType::U16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(self.general_data[i].time).arg((v.clone() as f64)/(self.general_data[i].gain as f64)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::I16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(self.general_data[i].time).arg((v.clone() as f64)/(self.general_data[i].gain as f64)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::U32(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(self.general_data[i].time).arg((v.clone() as f64)/(self.general_data[i].gain as f64)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::I32(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:general:{}", base_key, self.general_data[i].name)).arg(self.general_data[i].time).arg((v.clone() as f64)/(self.general_data[i].gain as f64)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::STR(_) => {
-                    debug!("Skipping string: {}", self.general_data[i].name);
-                },
-                PVSignalDataType::UNK(_) => {
-                    warn!("Got an unknown: {}", self.general_data[i].name);
-                }
-            }
+            sort_data_redis(i, &base_key, "general".to_string(), &self.general_data, &mut con);
         }
 
         for i in 0..self.storage_data.len() {
-            match self.storage_data[i].data {
-                PVSignalDataType::U16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(self.storage_data[i].time).arg((v.clone() as f64)/(self.storage_data[i].gain as f64)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::I16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(self.storage_data[i].time).arg((v.clone() as f64)/(self.storage_data[i].gain as f64)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::U32(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(self.storage_data[i].time).arg((v.clone() as f64)/(self.storage_data[i].gain as f64)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::I32(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:storage:{}", base_key, self.storage_data[i].name)).arg(self.storage_data[i].time).arg((v.clone() as f64)/(self.storage_data[i].gain as f64)).query(&mut con).unwrap();
-                },
-                PVSignalDataType::STR(_) => {
-                    debug!("Skipping string: {}", self.storage_data[i].name);
-                },
-                PVSignalDataType::UNK(_) => {
-                    warn!("Got an unknown: {}", self.storage_data[i].name);
-                },
-            }
+            sort_data_redis(i, &base_key, "storage".to_string(), &self.storage_data, &mut con);
         }
 
-        // for i in 0..self.pgs_data.len() {
-        //     match self.pgs_data[i].data {
-        //         PVSignalDataType::U16(v) => {
-        //             let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f64)/(self.pgs_data[i].gain as f64)).query(&mut con).unwrap();
-        //         },
-        //         PVSignalDataType::I16(v) => {
-        //             let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f64)/(self.pgs_data[i].gain as f64)).query(&mut con).unwrap();
-        //         },
-        //         PVSignalDataType::U32(v) => {
-        //             let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f64)/(self.pgs_data[i].gain as f64)).query(&mut con).unwrap();
-        //         },
-        //         PVSignalDataType::I32(v) => {
-        //             let _: () = redis::cmd("TS.ADD").arg(format!("{}:pgs:{}", base_key, self.pgs_data[i].name)).arg(self.pgs_data[i].time).arg((v.clone() as f64)/(self.pgs_data[i].gain as f64)).query(&mut con).unwrap();
-        //         },
-        //         PVSignalDataType::STR(_) => {
-        //             debug!("Skipping string: {}", self.pgs_data[i].name);
-        //         },
-        //         PVSignalDataType::UNK(_) => {
-        //             warn!("Got an unknown: {}", self.pgs_data[i].name);
-        //         },
-        //     }
-        // }
+        for i in 0..self.pgs_data.len() {
+            sort_data_redis(i, &base_key, "pgs".to_string(), &self.pgs_data, &mut con);
+        }
 
         for i in 0..self.pvs.len() {
             match self.pvs[i].voltage.data {
@@ -206,6 +199,7 @@ impl DataLogger {
         // close the connection
         let _: () = redis::cmd("QUIT").query(&mut con).unwrap();
     }
+
 
     pub fn _get_pvs(&self) -> &Vec<PVString> {
         &self.pvs
@@ -242,31 +236,7 @@ impl DataLogger {
             self.general_data[i].time = chrono::Utc::now().timestamp_millis();
             data.append(&mut tmp);
         }
-        for i in 0..self.general_data.len() {
-            match self.general_data[i].data {
-                PVSignalDataType::U16(_) => {
-                    self.general_data[i].data = PVSignalDataType::U16(data[i]);
-                },
-                PVSignalDataType::I16(_) => {
-                    self.general_data[i].data = PVSignalDataType::I16(data[i] as i16);
-                },
-                PVSignalDataType::U32(_) => {
-                    self.general_data[i].data = PVSignalDataType::U32((data[i] as u32) << 16 | data[i+1] as u32);
-                },
-                PVSignalDataType::I32(_) => {
-                    self.general_data[i].data = PVSignalDataType::I32(((data[i] as u32) << 16 | data[i+1] as u32) as i32);
-                },
-                PVSignalDataType::STR(_) => {
-                    let mut text = String::new();
-                    for j in 0..self.general_data[i].length {
-                        text.push((data[i+j as usize] >> 8) as u8 as char);
-                        text.push((data[i+j as usize] & 0xFF) as u8 as char);
-                    }
-                    self.general_data[i].data = PVSignalDataType::STR(text);
-                },
-                PVSignalDataType::UNK(_) => self.general_data[i].data = PVSignalDataType::UNK(data[i]),
-            }
-        }
+        sort_data_store(&self.general_data,data);
     }
 
     fn _read_storage_data(&mut self) {
@@ -277,31 +247,7 @@ impl DataLogger {
             self.storage_data[i].time = chrono::Utc::now().timestamp_millis();
             data.append(&mut tmp);
         }
-        for i in 0..self.storage_data.len() {
-            match self.storage_data[i].data {
-                PVSignalDataType::U16(_) => {
-                    self.storage_data[i].data = PVSignalDataType::U16(data[i]);
-                },
-                PVSignalDataType::I16(_) => {
-                    self.storage_data[i].data = PVSignalDataType::I16(data[i] as i16);
-                },
-                PVSignalDataType::U32(_) => {
-                    self.storage_data[i].data = PVSignalDataType::U32((data[i] as u32) << 16 | data[i+1] as u32);
-                },
-                PVSignalDataType::I32(_) => {
-                    self.storage_data[i].data = PVSignalDataType::I32(((data[i] as u32) << 16 | data[i+1] as u32) as i32);
-                },
-                PVSignalDataType::STR(_) => {
-                    let mut text = String::new();
-                    for j in 0..self.storage_data[i].length {
-                        text.push((data[i+j as usize] >> 8) as u8 as char);
-                        text.push((data[i+j as usize] & 0xFF) as u8 as char);
-                    }
-                    self.storage_data[i].data = PVSignalDataType::STR(text);
-                },
-                PVSignalDataType::UNK(_) => self.storage_data[i].data = PVSignalDataType::UNK(data[i]),
-            }
-        }
+        sort_data_store(&self.storage_data,data);
     }
 
     fn _read_pv_data(&mut self) {
