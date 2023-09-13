@@ -36,7 +36,7 @@ fn main() {
     }
 
     
-    let mut ctx = sync::tcp::connect_slave_with_timeout(condata.inverter_ip.parse().unwrap(), Slave(1), Some(Duration::from_secs(5))).unwrap();
+    let mut ctx = sync::tcp::connect_slave(condata.inverter_ip.parse().unwrap(), Slave(1)).unwrap();
     let client = redis::Client::open(condata.redis_ip).unwrap();
     
     debug!("sleeping 1 second to make sure the slave is ready");
