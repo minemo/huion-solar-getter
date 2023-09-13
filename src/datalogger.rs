@@ -48,16 +48,16 @@ impl ToRedisArgs for PVSignalDataType {
 fn sort_data_redis(i: usize, base_key: &String, cat_key: String, base_data: &Vec<PVSignal>, con: &mut redis::Connection) {
     match base_data[i].data {
         PVSignalDataType::U16(v) => {
-            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg((v.clone() as f64)/(base_data[i].gain as f64)).query(con).unwrap();
+            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg(v.clone()).query(con).unwrap();
         },
         PVSignalDataType::I16(v) => {
-            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg((v.clone() as f64)/(base_data[i].gain as f64)).query(con).unwrap();
+            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg(v.clone()).query(con).unwrap();
         },
         PVSignalDataType::U32(v) => {
-            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg((v.clone() as f64)/(base_data[i].gain as f64)).query(con).unwrap();
+            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg(v.clone()).query(con).unwrap();
         },
         PVSignalDataType::I32(v) => {
-            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg((v.clone() as f64)/(base_data[i].gain as f64)).query(con).unwrap();
+            let _: () = redis::cmd("TS.ADD").arg(format!("{}:{}:{}", base_key, cat_key, base_data[i].name)).arg(base_data[i].time).arg(v.clone()).query(con).unwrap();
         },
         PVSignalDataType::STR(_) => {
             debug!("Skipping string: {}", base_data[i].name);
@@ -157,7 +157,7 @@ impl DataLogger {
         creator.arg(format!("{}:lookup",base_key));
         let alldata: Vec<PVSignal> = [self.general_data.as_slice(), self.storage_data.as_slice(), self.pvs.iter().map(|x| [x.current.clone(), x.voltage.clone()]).flatten().collect::<Vec<PVSignal>>().as_slice()].concat();
         for d in alldata.iter() {
-            creator.arg(&d.name).arg(&d.unit);
+            creator.arg(&d.name).arg(&d.unit).arg(&d.gain);
         }
         let _: () = creator.query(&mut con).unwrap();
 
@@ -179,7 +179,7 @@ impl DataLogger {
         for i in 0..self.pvs.len() {
             match self.pvs[i].voltage.data {
                 PVSignalDataType::I16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pv:{}", base_key, self.pvs[i].voltage.name)).arg(self.pvs[i].voltage.time).arg((v.clone() as f64)/(self.pvs[i].voltage.gain as f64)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pv:{}", base_key, self.pvs[i].voltage.name)).arg(self.pvs[i].voltage.time).arg(v.clone()).query(&mut con).unwrap();
                 },
                 _ => {
                     debug!("Skipping string: {}", self.pvs[i].voltage.name);
@@ -187,7 +187,7 @@ impl DataLogger {
             }
             match self.pvs[i].current.data {
                 PVSignalDataType::I16(v) => {
-                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pv:{}", base_key, self.pvs[i].current.name)).arg(self.pvs[i].current.time).arg((v.clone() as f64)/(self.pvs[i].current.gain as f64)).query(&mut con).unwrap();
+                    let _: () = redis::cmd("TS.ADD").arg(format!("{}:pv:{}", base_key, self.pvs[i].current.name)).arg(self.pvs[i].current.time).arg(v.clone()).query(&mut con).unwrap();
                 },
                 _ => {
                     debug!("Skipping string: {}", self.pvs[i].current.name);
