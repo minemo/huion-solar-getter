@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use redis::ToRedisArgs;
 use tokio_modbus::{client::sync, prelude::SyncReader};
 use rand::prelude::*;
@@ -96,6 +98,22 @@ fn sort_data_store(base_data: &mut Vec<PVSignal>, data: Vec<u16>) {
     }
 }
 
+fn read_data(base_data: &mut Vec<PVSignal>, ctx: &mut sync::Context, name: String) {
+    let mut data: Vec<u16> = Vec::new();
+    let readstart = Instant::now();
+    for i in 0..base_data.len() {
+        debug!("Reading data for: {}", base_data[i].name);
+        let mut tmp: Vec<u16> = ctx.read_holding_registers(base_data[i].address, base_data[i].length).unwrap();
+        base_data[i].time = chrono::Utc::now().timestamp_millis();
+        data.append(&mut tmp);
+    }
+    let rd = readstart.elapsed();
+    let writestart = Instant::now();
+    sort_data_store(base_data,data);
+    let wd = writestart.elapsed();
+    info!("{} Read: {}ms Write: {}", name, rd.as_millis(), wd.as_millis())
+}
+
 impl DataLogger {
     pub fn new(ctx: sync::Context, redis: redis::Client) -> DataLogger {
         DataLogger {
@@ -112,15 +130,16 @@ impl DataLogger {
         let num_pvs = self._get_num_pvs() as u8;
         self.pvs = gen_pvdata(num_pvs);
         self.general_data = gen_constdata(0);
-        // self.pgs_data = gen_constdata(1);
+        self.pgs_data = gen_constdata(1);
         self.storage_data = gen_storagedata();
         self._test_redis();
     }
 
     pub fn read_data(&mut self) {
         info!("Reading data from inverter");
-        self._read_general_data();
-        self._read_storage_data();
+        read_data(&mut self.general_data, &mut self.ctx, "General".to_string());
+        read_data(&mut self.storage_data, &mut self.ctx, "Storage".to_string());
+        read_data(&mut self.pgs_data, &mut self.ctx, "PGS".to_string());
         self._read_pv_data();
     }
 
@@ -237,30 +256,9 @@ impl DataLogger {
         let _: () = redis::cmd("QUIT").query(&mut con).unwrap();
     }
 
-    fn _read_general_data(&mut self) {
-        let mut data: Vec<u16> = Vec::new();
-        for i in 0..self.general_data.len() {
-            debug!("Reading data for: {}", self.general_data[i].name);
-            let mut tmp: Vec<u16> = self.ctx.read_holding_registers(self.general_data[i].address, self.general_data[i].length).unwrap();
-            self.general_data[i].time = chrono::Utc::now().timestamp_millis();
-            data.append(&mut tmp);
-        }
-        sort_data_store(&mut self.general_data,data);
-    }
-
-    fn _read_storage_data(&mut self) {
-        let mut data: Vec<u16> = Vec::new();
-        for i in 0..self.storage_data.len() {
-            debug!("Reading data for: {}", self.storage_data[i].name);
-            let mut tmp: Vec<u16> = self.ctx.read_holding_registers(self.storage_data[i].address, self.storage_data[i].length).unwrap();
-            self.storage_data[i].time = chrono::Utc::now().timestamp_millis();
-            data.append(&mut tmp);
-        }
-        sort_data_store(&mut self.storage_data,data);
-    }
-
     fn _read_pv_data(&mut self) {
         let mut data: Vec<u16> = Vec::new();
+        let readstart = Instant::now();
         for i in 0..self.pvs.len() {
             debug!("Reading data for: {}", self.pvs[i].voltage.name);
             let mut tmp: Vec<u16> = self.ctx.read_holding_registers(self.pvs[i].voltage.address, self.pvs[i].voltage.length).unwrap();
@@ -271,6 +269,8 @@ impl DataLogger {
             self.pvs[i].current.time = chrono::Utc::now().timestamp_millis();
             data.append(&mut tmp);
         }
+        let rd = readstart.elapsed();
+        let writestart = Instant::now();
         for i in 0..self.pvs.len() {
             match self.pvs[i].voltage.data {
                 PVSignalDataType::I16(_) => {
@@ -289,6 +289,8 @@ impl DataLogger {
                 },
             }
         }
+        let wd = writestart.elapsed();
+        info!("General Read: {}ms Write: {}", rd.as_millis(), wd.as_millis())
     }
 
     fn _get_num_pvs(&mut self) -> u16 {
