@@ -157,7 +157,16 @@ impl DataLogger {
         creator.arg(format!("{}:lookup",base_key));
         let alldata: Vec<PVSignal> = [self.general_data.as_slice(), self.storage_data.as_slice(), self.pvs.iter().map(|x| [x.current.clone(), x.voltage.clone()]).flatten().collect::<Vec<PVSignal>>().as_slice()].concat();
         for d in alldata.iter() {
-            creator.arg(&d.name).arg(&d.unit).arg(&d.gain);
+            creator.arg(&d.name).arg(&d.unit);
+        }
+        let _: () = creator.query(&mut con).unwrap();
+        // adding a gain-scaling-table to database if it doesnt already exist
+        debug!("Updating/adding scaling table");
+        let mut creator = redis::cmd("HSET");
+        creator.arg(format!("{}:scaling",base_key));
+        let alldata: Vec<PVSignal> = [self.general_data.as_slice(), self.storage_data.as_slice(), self.pvs.iter().map(|x| [x.current.clone(), x.voltage.clone()]).flatten().collect::<Vec<PVSignal>>().as_slice()].concat();
+        for d in alldata.iter() {
+            creator.arg(&d.name).arg(&d.gain);
         }
         let _: () = creator.query(&mut con).unwrap();
 
