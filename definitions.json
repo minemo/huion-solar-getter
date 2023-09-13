@@ -36,7 +36,7 @@
         {"dtype": "U16", "addr": 32090, "len": 1, "gain": 1, "name":"fault", "unit":"", "category": 0},
         {"dtype": "U32", "addr": 32091, "len": 2, "gain": 1, "name":"startup_time", "unit":"", "category": 0},
         {"dtype": "U32", "addr": 32093, "len": 2, "gain": 1, "name":"shutdown_time", "unit":"", "category": 0},
-        {"dtype": "U32", "addr": 32106, "len": 2, "gain": 1, "name":"acc_energy_yield", "unit":"kWh", "category": 0},
+        {"dtype": "U32", "addr": 32106, "len": 2, "gain": 100, "name":"acc_energy_yield", "unit":"kWh", "category": 0},
         {"dtype": "U32", "addr": 32114, "len": 2, "gain": 1, "name":"day_energy_yield", "unit":"kWh", "category": 0},
         {"dtype": "I32", "addr": 37113, "len": 2, "gain": 1, "name":"pmc_active_power", "unit":"W", "category": 0},
         {"dtype": "U16", "addr": 37200, "len": 1, "gain": 1, "name":"num_optim", "unit":"", "category": 0},
@@ -80,7 +80,8 @@
         {"dtype": "U16", "addr": 37100, "len": 1, "gain": 1, "name":"meter_status", "unit":"", "category": 0},
         {"dtype": "I32", "addr": 37113, "len": 2, "gain": 1, "name":"meter_active_power", "unit":"W", "category": 0},
         {"dtype": "I32", "addr": 37119, "len": 2, "gain": 100, "name":"meter_pa_power", "unit":"kWh", "category": 0},
-        {"dtype": "I32", "addr": 37121, "len": 2, "gain": 100, "name":"meter_ra_power", "unit":"kWh", "category": 0}
+        {"dtype": "I32", "addr": 37121, "len": 2, "gain": 100, "name":"meter_ra_power", "unit":"kWh", "category": 0},
+        {"dtype": "U16", "addr": 37926, "len": 1, "gain": 1, "name":"soh_calib_status", "unit":"", "category": 2}
     ],
     "scheme" : {
         "bat": [

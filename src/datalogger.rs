@@ -111,7 +111,7 @@ fn read_data(base_data: &mut Vec<PVSignal>, ctx: &mut sync::Context, name: Strin
     let writestart = Instant::now();
     sort_data_store(base_data,data);
     let wd = writestart.elapsed();
-    info!("{} Read: {}ms Write: {}", name, rd.as_millis(), wd.as_millis())
+    info!("{} Read: {}ms Write: {}ms", name, rd.as_millis(), wd.as_millis())
 }
 
 impl DataLogger {
